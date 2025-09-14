@@ -1,0 +1,243 @@
+﻿<UserControl x:Class="CalendarMaker.Views.MonthPageView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:CalendarMaker.Views"
+             xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+    <Grid Width="2480" Height="3508" Background="White">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1.9*"/>
+            <!-- 上部画像 -->
+            <RowDefinition Height="0.65*"/>
+            <!-- 見出し -->
+            <RowDefinition Height="*"/>
+            <!-- 曜日＋日付（7×7） -->
+        </Grid.RowDefinitions>
+
+        <!-- 画像 -->
+        <Border Grid.Row="0" ClipToBounds="True">
+            <Image Source="{Binding ImagePath}" Stretch="UniformToFill"/>
+        </Border>
+
+        <!-- 見出し -->
+        <Grid Grid.Row="1" Margin="120,0,120,0" VerticalAlignment="Center">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Grid.Column="0"
+                 Text="{Binding Month}"
+                 FontFamily="{Binding Settings.HeaderFont}"
+                 FontSize="{Binding Settings.HeaderFontSize, Converter={StaticResource DoubleMinusConverter}, ConverterParameter=0}"
+                 FontWeight="Bold"
+                 VerticalAlignment="Bottom"
+                 Margin="0,0,24,0"/>
+
+            <TextBlock Grid.Row="0" Grid.Column="1"
+                 Text="{Binding MonthEnglish}"
+                 FontFamily="{Binding Settings.HeaderFont}"
+                 FontSize="{Binding Settings.HeaderFontSize, Converter={StaticResource DoubleMinusConverter}, ConverterParameter=12}"
+                 FontWeight="SemiBold"
+                 VerticalAlignment="Bottom"/>
+
+            <TextBlock Grid.Row="1" Grid.ColumnSpan="2"
+                 Text="{Binding HeaderEraText}"
+                 FontFamily="{Binding Settings.BodyFont}"
+                 FontSize="{Binding Settings.BodyFontSize, Converter={StaticResource DoubleMinusConverter}, ConverterParameter=-2}"
+                 HorizontalAlignment="Left"
+                 Margin="0,6,0,0"/>
+        </Grid>
+
+        <!-- 曜日＋日付：1つの7×7表 -->
+        <Border Grid.Row="2" Margin="80,0,80,140"
+            BorderBrush="#888" BorderThickness="2">
+            <ItemsControl AlternationCount="49">
+
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="7" Rows="7"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Tag"
+                    Value="{Binding RelativeSource={RelativeSource Self}, Path=(ItemsControl.AlternationIndex)}"/>
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+
+                <ItemsControl.Resources>
+                    <!-- データ供給（StaticResource経由） -->
+                    <CollectionViewSource x:Key="Weekdays" Source="{Binding WeekdayLabels}"/>
+                    <CollectionViewSource x:Key="Days"     Source="{Binding Cells}"/>
+
+                    <!-- 曜日セル -->
+                    <DataTemplate x:Key="WeekdayTemplate">
+                        <Border BorderBrush="#B0B4B9" BorderThickness="0,0,1,1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="6">
+                                            <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+
+                            <TextBlock Text="{Binding}"
+                         HorizontalAlignment="Center" VerticalAlignment="Center"
+                         Margin="0,6,0,6"
+                         FontFamily="{Binding DataContext.Settings.BodyFont, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                         FontSize="{Binding DataContext.Settings.BodyFontSize, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource DoubleMinusConverter}, ConverterParameter=-4}"
+                         FontWeight="SemiBold">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#222"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="0">
+                                                <Setter Property="Foreground" Value="#C00"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="6">
+                                                <Setter Property="Foreground" Value="#06C"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Border>
+                    </DataTemplate>
+
+                    <!-- 日付セル -->
+                    <DataTemplate x:Key="DayCellTemplate">
+                        <Border x:Name="CellBorder" BorderBrush="#B0B4B9" BorderThickness="1">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Style.Triggers>
+                                        <!-- 端セル調整（外枠と重ねない） -->
+                                        <!-- 左端列 -->
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="7">
+                                            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="14">
+                                            <Setter Property="BorderThickness" Value="0,1,1,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="21">
+                                            <Setter Property="BorderThickness" Value="0,1,1,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="28">
+                                            <Setter Property="BorderThickness" Value="0,1,1,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="35">
+                                            <Setter Property="BorderThickness" Value="0,1,1,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="42">
+                                            <Setter Property="BorderThickness" Value="0,1,1,0"/>
+                                        </DataTrigger>
+                                        <!-- 右端列 -->
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="13">
+                                            <Setter Property="BorderThickness" Value="1,0,0,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="20">
+                                            <Setter Property="BorderThickness" Value="1,1,0,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="27">
+                                            <Setter Property="BorderThickness" Value="1,1,0,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="34">
+                                            <Setter Property="BorderThickness" Value="1,1,0,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="41">
+                                            <Setter Property="BorderThickness" Value="1,1,0,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="48">
+                                            <Setter Property="BorderThickness" Value="1,1,0,0"/>
+                                        </DataTrigger>
+                                        <!-- 最上段：上0 -->
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="8">
+                                            <Setter Property="BorderThickness" Value="1,0,1,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="9">
+                                            <Setter Property="BorderThickness" Value="1,0,1,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="10">
+                                            <Setter Property="BorderThickness" Value="1,0,1,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="11">
+                                            <Setter Property="BorderThickness" Value="1,0,1,1"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="12">
+                                            <Setter Property="BorderThickness" Value="1,0,1,1"/>
+                                        </DataTrigger>
+                                        <!-- 最下段：下0 -->
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="43">
+                                            <Setter Property="BorderThickness" Value="1,1,1,0"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="44">
+                                            <Setter Property="BorderThickness" Value="1,1,1,0"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="45">
+                                            <Setter Property="BorderThickness" Value="1,1,1,0"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="46">
+                                            <Setter Property="BorderThickness" Value="1,1,1,0"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="47">
+                                            <Setter Property="BorderThickness" Value="1,1,1,0"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+
+                            <Grid>
+                                <TextBlock Text="{Binding Date.Day}"
+                           HorizontalAlignment="Right" VerticalAlignment="Top"
+                           Margin="0,6,6,0"
+                           FontFamily="{Binding DataContext.Settings.BodyFont, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           FontSize="{Binding DataContext.Settings.BodyFontSize, RelativeSource={RelativeSource AncestorType=UserControl}}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#222"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Date.DayOfWeek}" Value="{x:Static sys:DayOfWeek.Sunday}">
+                                                    <Setter Property="Foreground" Value="#C00"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Date.DayOfWeek}" Value="{x:Static sys:DayOfWeek.Saturday}">
+                                                    <Setter Property="Foreground" Value="#06C"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
+                                                    <Setter Property="Foreground" Value="#999"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+
+                                <TextBlock Text="{Binding AnniversaryLabel}" TextWrapping="Wrap"
+                           Margin="8,28,8,8" Foreground="#C00"
+                           FontFamily="{Binding DataContext.Settings.BodyFont, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           FontSize="{Binding DataContext.Settings.BodyFontSize, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource DoubleMinusConverter}, ConverterParameter=6}"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.Resources>
+
+                <!-- ItemsSource に CompositeCollection を設定 -->
+                <ItemsControl.ItemsSource>
+                    <CompositeCollection>
+                        <CollectionContainer Collection="{Binding Source={StaticResource Weekdays}}"/>
+                        <CollectionContainer Collection="{Binding Source={StaticResource Days}}"/>
+                    </CompositeCollection>
+                </ItemsControl.ItemsSource>
+
+                <ItemsControl.ItemTemplateSelector>
+                    <local:CalendarTemplateSelector/>
+                </ItemsControl.ItemTemplateSelector>
+            </ItemsControl>
+        </Border>
+    </Grid>
+</UserControl>
