@@ -13,9 +13,9 @@ namespace CalendarMaker.Services
 
             foreach (var vm in pages)
             {
-                var control = new CalendarMaker.Views.MonthPageView { DataContext = vm };
+                var control = new CalendarMaker.Views.MonthPageView { DataContext = vm, Width = PageSpec.PageDipW, Height = PageSpec.PageDipH };
                 control.Measure(new Size(dlg.PrintableAreaWidth, dlg.PrintableAreaHeight));
-                control.Arrange(new System.Windows.Rect(new Point(0, 0), new Size(dlg.PrintableAreaWidth, dlg.PrintableAreaHeight)));
+                control.Arrange(new Rect(new Point(0, 0), new Size(dlg.PrintableAreaWidth, dlg.PrintableAreaHeight)));
                 control.UpdateLayout();
                 dlg.PrintVisual(control, $"{vm.Year}-{vm.Month}");
             }

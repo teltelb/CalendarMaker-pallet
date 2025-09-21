@@ -1,9 +1,12 @@
 ﻿using CalendarMaker.ViewModels;
+using Microsoft.Win32;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -12,38 +15,58 @@ namespace CalendarMaker.Services
 {
     public static class PdfExporter
     {
-        const int Dpi = 300;
-        const int PagePxW = 2480; // A4 300dpi
-        const int PagePxH = 3508;
+        const int Dpi = PageSpec.PdfDpi;
+        const int PagePxW = PageSpec.PagePxW;
+        const int PagePxH = PageSpec.PagePxH;
 
-        public static void Export(IList<MonthPageViewModel> pages)
+        public static void Export(IList<MonthPageViewModel> pages, IProgress<int>? progress = null, CancellationToken token = default)
         {
+            var sfd = new SaveFileDialog { Filter = "PDF ファイル (*.pdf)|*.pdf", FileName = "calendar.pdf" };
+            if (sfd.ShowDialog() != true) return;
+
+            var images = new List<byte[]>(pages.Count);
+            for (int i = 0; i < pages.Count; i++)
+            {
+                token.ThrowIfCancellationRequested();
+                var png = RenderPageToPng(pages[i], PagePxW, PagePxH, Dpi);
+                images.Add(png);
+                progress?.Report((i + 1) * 50 / pages.Count);
+            }
+
+            token.ThrowIfCancellationRequested();
+
             var doc = Document.Create(container =>
             {
-                foreach (var vm in pages)
+                foreach (var img in images)
                 {
                     container.Page(page =>
                     {
                         page.Size(PageSizes.A4);
                         page.Margin(0);
-                        page.Content().Image(RenderPageToPng(vm, PagePxW, PagePxH, Dpi));
+                        page.Content().Element(e => e.AlignCenter().AlignMiddle().Image(img).FitArea());
                     });
                 }
             });
 
-            var path = System.IO.Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.Desktop),
-                "calendar.pdf");
+            try { doc.GeneratePdf(sfd.FileName); }
+            catch (Exception ex) { throw new InvalidOperationException("PDF生成に失敗しました。", ex); }
 
-            doc.GeneratePdf(path);
-            MessageBox.Show($"PDFを書き出しました:\n{path}");
+            progress?.Report(100);
         }
 
         static byte[] RenderPageToPng(MonthPageViewModel vm, int w, int h, int dpi)
         {
-            var control = new CalendarMaker.Views.MonthPageView { DataContext = vm, Width = w, Height = h };
-            control.Measure(new System.Windows.Size(w, h));
-            control.Arrange(new System.Windows.Rect(0, 0, w, h));
+            var control = new CalendarMaker.Views.MonthPageView
+            {
+                DataContext = vm,
+                Width = PageSpec.PageDipW,
+                Height = PageSpec.PageDipH,
+                UseLayoutRounding = true,
+                SnapsToDevicePixels = true
+            };
+
+            control.Measure(new System.Windows.Size(PageSpec.PageDipW, PageSpec.PageDipH));
+            control.Arrange(new System.Windows.Rect(0, 0, PageSpec.PageDipW, PageSpec.PageDipH));
             control.UpdateLayout();
 
             var rtb = new RenderTargetBitmap(w, h, dpi, dpi, PixelFormats.Pbgra32);
@@ -57,3 +80,4 @@ namespace CalendarMaker.Services
         }
     }
 }
+
