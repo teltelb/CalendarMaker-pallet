@@ -60,6 +60,7 @@ namespace CalendarMaker
             }
         }
 
+
         // Export: capture snapshot on UI, then run export on STA thread
         private async void ExportPdf_Click(object sender, RoutedEventArgs e)
         {

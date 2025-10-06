@@ -8,12 +8,18 @@ namespace CalendarMaker.Services
 {
     public static class CalendarBuilder
     {
+        private const int WeeksToDisplay = 6;
+        private const int DaysPerWeek = 7;
+        private const int MaxDisplayAnniversaries = 3;
+
         public static List<DayCell> BuildMonthGrid(int year, int month, DayOfWeek firstDayOfWeek, Dictionary<DateOnly, List<string>> annivs)
         {
             var first = new DateOnly(year, month, 1);
             int daysInMonth = DateTime.DaysInMonth(year, month);
-            int offset = ((int)first.DayOfWeek - (int)firstDayOfWeek + 7) % 7;
-            var cells = new List<DayCell>(42);
+            int offset = ((int)first.DayOfWeek - (int)firstDayOfWeek + DaysPerWeek) % DaysPerWeek;
+            int baseSlots = offset + daysInMonth;
+            int targetCellCount = Math.Max(WeeksToDisplay * DaysPerWeek, (int)Math.Ceiling(baseSlots / (double)DaysPerWeek) * DaysPerWeek);
+            var cells = new List<DayCell>(targetCellCount);
 
             var prevMonth = first.AddMonths(-1);
             int prevDays = DateTime.DaysInMonth(prevMonth.Year, prevMonth.Month);
@@ -27,11 +33,23 @@ namespace CalendarMaker.Services
                 cells.Add(MakeCell(new DateOnly(year, month, d), true, annivs));
 
             var nextStart = first.AddMonths(1);
-            while (cells.Count < 42)
+            while (cells.Count < targetCellCount)
             {
                 var dayIndex = cells.Count - (offset + daysInMonth) + 1;
                 var d = new DateOnly(nextStart.Year, nextStart.Month, dayIndex);
                 cells.Add(MakeCell(d, false, annivs));
+            }
+
+            int rowCount = targetCellCount / DaysPerWeek;
+            for (int i = 0; i < cells.Count; i++)
+            {
+                int row = i / DaysPerWeek;
+                int column = i % DaysPerWeek;
+                var cell = cells[i];
+                cell.RowIndex = row;
+                cell.ColumnIndex = column;
+                cell.IsLastRow = row == rowCount - 1;
+                cell.IsLastColumn = column == DaysPerWeek - 1;
             }
 
             return cells;
@@ -45,8 +63,8 @@ namespace CalendarMaker.Services
             }
 
             var filtered = lines.Where(l => !string.IsNullOrWhiteSpace(l)).Select(l => l.Trim()).ToList();
-            var display = filtered.Take(3).ToList();
-            while (display.Count < 3) display.Add(string.Empty);
+            var display = filtered.Take(MaxDisplayAnniversaries).ToList();
+            while (display.Count < MaxDisplayAnniversaries) display.Add(string.Empty);
 
             return new DayCell
             {

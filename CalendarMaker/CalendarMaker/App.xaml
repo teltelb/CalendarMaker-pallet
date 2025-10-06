@@ -8,5 +8,6 @@
     <Application.Resources>
         <conv:IndexPlusOneConverter x:Key="IndexPlusOneConverter"/>
         <conv:MultiplyConverter x:Key="MultiplyConverter"/>
+        <conv:AspectHeightFromWidthConverter x:Key="AspectHeightFromWidthConverter" PageAspectFactor="0.6666667"/>
     </Application.Resources>
 </Application>

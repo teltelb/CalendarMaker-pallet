@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -21,21 +21,25 @@ namespace CalendarMaker.ViewModels
         private ImageSource? _preview;
         public ImageSource? Preview { get => _preview; private set { _preview = value; OnPropertyChanged(); } }
 
+        private double? _aspectRatio;
+        public double? AspectRatio { get => _aspectRatio; private set { if (_aspectRatio == value) return; _aspectRatio = value; OnPropertyChanged(); } }
+
         private void TryLoadPreview(string path)
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) { Preview = null; return; }
+                if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) { Preview = null; AspectRatio = null; return; }
                 var bi = new BitmapImage();
                 bi.BeginInit();
                 bi.CacheOption = BitmapCacheOption.OnLoad;
                 bi.DecodePixelWidth = 160;
                 bi.UriSource = new Uri(path, UriKind.Absolute);
                 bi.EndInit();
+                AspectRatio = bi.PixelHeight > 0 ? (double)bi.PixelWidth / bi.PixelHeight : (double?)null;
                 bi.Freeze();
                 Preview = bi;
             }
-            catch { Preview = null; }
+            catch { Preview = null; AspectRatio = null; }
         }
 
         public event PropertyChangedEventHandler? PropertyChanged;

@@ -1,4 +1,4 @@
-<Window x:Class="CalendarMaker.MainWindow"
+﻿<Window x:Class="CalendarMaker.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:CalendarMaker.ViewModels"
@@ -16,19 +16,19 @@
             <ColumnDefinition Width="420"/>
         </Grid.ColumnDefinitions>
 
-        <!-- 左：プレビュー -->
+        <!-- 蟾ｦ・壹・繝ｬ繝薙Η繝ｼ -->
         <DockPanel Grid.Column="0" Background="#ECEFF1">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="8">
-                <TextBlock Text="ページ:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <TextBlock Text="繝壹・繧ｸ:" VerticalAlignment="Center" Margin="0,0,6,0"/>
                 <ComboBox Width="160" ItemsSource="{Binding Pages}" SelectedIndex="{Binding SelectedPageIndex}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
-                            <TextBlock Text="{Binding Month, StringFormat={}{0}月}"/>
+                            <TextBlock Text="{Binding Month}"/>
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
 
-                <TextBlock Text="  ズーム:" VerticalAlignment="Center" Margin="12,0,6,0"/>
+                <TextBlock Text="  繧ｺ繝ｼ繝:" VerticalAlignment="Center" Margin="12,0,6,0"/>
                 <Slider x:Name="ZoomSlider" Minimum="0.1" Maximum="2.0" Value="0.70" Width="200"/>
             </StackPanel>
 
@@ -53,7 +53,7 @@
                             <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.35"/>
                         </Grid.Effect>
 
-                        <!-- DIPサイズのページを1枚表示 -->
+                        <!-- DIP繧ｵ繧､繧ｺ縺ｮ繝壹・繧ｸ繧・譫夊｡ｨ遉ｺ -->
                         <Border Width="{x:Static core:PageSpec.PageDipW}"
                                 Height="{x:Static core:PageSpec.PageDipH}"
                                 BorderBrush="#9AA0A6" BorderThickness="1" Background="White">
@@ -68,70 +68,97 @@
             </ScrollViewer>
         </DockPanel>
 
-        <!-- 右：設定 -->
-        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+        <!-- 蜿ｳ・夊ｨｭ螳・-->
+                        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <Border Padding="12">
                 <StackPanel>
-                    <StackPanel.Resources>
-                        <Style TargetType="FrameworkElement">
-                            <Setter Property="Margin" Value="0,6,0,0"/>
-                        </Style>
-                    </StackPanel.Resources>
+                    <TabControl>
+                        <TabItem Header="基本設定">
+                            <StackPanel>
+                                <TextBlock Text="基本設定" FontWeight="Bold" FontSize="16" Margin="0,0,0,8"/>
 
-                    <TextBlock Text="設定" FontWeight="Bold" FontSize="16"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <TextBlock Text="開始月" Width="70" VerticalAlignment="Center"/>
+                                    <DatePicker SelectedDate="{Binding StartMonthDateTime, Mode=TwoWay}"/>
+                                </StackPanel>
 
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="開始月" Width="70" VerticalAlignment="Center"/>
-                        <DatePicker SelectedDate="{Binding StartMonthDateTime, Mode=TwoWay}"/>
-                    </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="開始曜日" Width="70" VerticalAlignment="Center"/>
+                                    <ComboBox Width="150" ItemsSource="{Binding StartWeekdayOptions}" SelectedItem="{Binding Settings.StartWeekday}"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </TabItem>
 
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Text="開始曜日" Width="70" VerticalAlignment="Center"/>
-                        <ComboBox Width="150" ItemsSource="{Binding StartWeekdayOptions}" SelectedItem="{Binding Settings.StartWeekday}"/>
-                    </StackPanel>
+                        <TabItem Header="月別画像">
+                            <StackPanel>
+                                <TextBlock Text="月別画像（開始月から順）" FontWeight="Bold" Margin="0,0,0,8"/>
 
-                    <Separator/>
-                    <TextBlock Text="月別画像（開始月から順）" FontWeight="Bold"/>
+                                <DataGrid ItemsSource="{Binding ImageRows}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          IsReadOnly="True"
+                                          HeadersVisibility="Column"
+                                          RowHeight="56"
+                                          GridLinesVisibility="Horizontal">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="年月日" Binding="{Binding MonthLabel}" Width="90"/>
+                                        <DataGridTemplateColumn Header="画像プレビュー" Width="140">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Border Width="120" Height="50" BorderBrush="#CCC" BorderThickness="1" Background="White">
+                                                        <Image Source="{Binding Preview}" Stretch="Uniform"/>
+                                                    </Border>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                        <DataGridTextColumn Header="画像名" Binding="{Binding ImageName}" Width="*"/>
+                                        <DataGridTemplateColumn Header="操作" Width="210">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <Button Content="参照..." Margin="0,0,6,0" Tag="{Binding}" Click="ImageBrowseRow_Click"/>
+                                                        <Button Content="↑" Width="30" Margin="0,0,4,0" Tag="{Binding}" Click="ImageUpRow_Click"/>
+                                                        <Button Content="↓" Width="30" Tag="{Binding}" Click="ImageDownRow_Click"/>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </TabItem>
 
-                    <DataGrid ItemsSource="{Binding ImageRows}"
-                              AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" IsReadOnly="True"
-                              HeadersVisibility="Column" RowHeight="56" GridLinesVisibility="Horizontal" Margin="0,4,0,0">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="年月日" Binding="{Binding MonthLabel}" Width="90"/>
-                            <DataGridTemplateColumn Header="画像プレビュー" Width="140">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Border Width="120" Height="50" BorderBrush="#CCC" BorderThickness="1" Background="White">
-                                            <Image Source="{Binding Preview}" Stretch="Uniform"/>
-                                        </Border>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                            <DataGridTextColumn Header="画像名" Binding="{Binding ImageName}" Width="*"/>
-                            <DataGridTemplateColumn Header="操作" Width="210">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                            <Button Content="参照..." Margin="0,0,6,0" Tag="{Binding}" Click="ImageBrowseRow_Click"/>
-                                            <Button Content="↑" Width="30" Margin="0,0,4,0" Tag="{Binding}" Click="ImageUpRow_Click"/>
-                                            <Button Content="↓" Width="30" Tag="{Binding}" Click="ImageDownRow_Click"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                        <TabItem Header="記念日・祝日">
+                            <StackPanel>
+                                <TextBlock Text="記念日を追加" FontWeight="Bold" Margin="0,0,0,8"/>
 
-                    <Separator/>
-                    <TextBlock Text="記念日" FontWeight="Bold"/>
-                    <StackPanel Orientation="Horizontal">
-                        <DatePicker x:Name="AnnivDate"/>
-                        <TextBox x:Name="AnnivLabel" Width="180"/>
-                        <Button Content="追加" Click="AddAnniv_Click"/>
-                    </StackPanel>
-                    <ListBox ItemsSource="{Binding Settings.Anniversaries}" Height="120" DisplayMemberPath="Label"/>
-                    <Separator/>
-                    <StackPanel Orientation="Horizontal">
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                                    <DatePicker x:Name="AnnivDate" Width="160"/>
+                                    <TextBox x:Name="AnnivLabel" Width="200" Margin="8,0,0,0"/>
+                                    <Button Content="追加" Margin="8,0,0,0" Click="AddAnniv_Click"/>
+                                </StackPanel>
+
+                                <DataGrid ItemsSource="{Binding Settings.Anniversaries}"
+                                          AutoGenerateColumns="False"
+                                          CanUserAddRows="False"
+                                          CanUserDeleteRows="False"
+                                          IsReadOnly="True"
+                                          HeadersVisibility="Column"
+                                          RowHeight="32"
+                                          GridLinesVisibility="Horizontal">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="日付" Binding="{Binding Date, StringFormat=yyyy-MM-dd}" Width="120"/>
+                                        <DataGridTextColumn Header="名称" Binding="{Binding Label}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </StackPanel>
+                        </TabItem>
+                    </TabControl>
+
+                    <Separator Margin="0,12,0,0"/>
+
+                    <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
                         <Button Content="再生成" Width="100" Click="Rebuild_Click"/>
                         <Button Content="PDF出力" Width="100" Margin="8,0,0,0" Click="ExportPdf_Click"/>
                         <Button Content="印刷" Width="100" Margin="8,0,0,0" Click="Print_Click"/>
@@ -141,3 +168,8 @@
         </ScrollViewer>
     </Grid>
 </Window>
+
+
+
+
+

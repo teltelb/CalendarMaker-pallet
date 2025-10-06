@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using CalendarMaker.Models;
 
 namespace CalendarMaker.ViewModels
@@ -12,5 +12,6 @@ namespace CalendarMaker.ViewModels
         public string? ImagePath { get; set; }
         public ObservableCollection<DayCell> Cells { get; set; } = new();
         public string[] WeekdayLabels { get; set; } = new string[7];
+        public double? ImageAspectRatio { get; set; }
     }
 }

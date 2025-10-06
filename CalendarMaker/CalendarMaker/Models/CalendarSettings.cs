@@ -10,6 +10,7 @@ namespace CalendarMaker.Models
     {
         public DateOnly Date { get; set; }
         public string Label { get; set; } = string.Empty;
+        public bool IsManagedHoliday { get; set; }
         public override string ToString() => $"{Date:yyyy-MM-dd}: {Label}";
     }
 
@@ -20,6 +21,9 @@ namespace CalendarMaker.Models
         public ObservableCollection<Anniversary> Anniversaries { get; } = new();
         public ObservableCollection<string> MonthImagePaths { get; } = new(Enumerable.Repeat(string.Empty, 12));
 
+        public DateTimeOffset? HolidaysLastFetched { get; set; }
+        public DateTimeOffset? HolidaysSourceLastModified { get; set; }
+
         public void SetMonthImagePath(int index, string path)
         {
             if (index < 0 || index >= MonthImagePaths.Count) return;
@@ -27,3 +31,4 @@ namespace CalendarMaker.Models
         }
     }
 }
+
