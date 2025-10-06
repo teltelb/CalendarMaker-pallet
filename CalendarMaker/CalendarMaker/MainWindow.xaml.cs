@@ -4,6 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 using CalendarMaker.Views;
 using CalendarMaker.ViewModels;
 
@@ -11,11 +14,24 @@ namespace CalendarMaker
 {
     public partial class MainWindow : Window
     {
+        private const double ZoomStep = 0.1;
+        private bool _isPanning;
+        private Point _panStart;
+        private Point _panOrigin;
+
         public MainViewModel VM => (MainViewModel)DataContext;
 
         public MainWindow()
         {
             InitializeComponent();
+            PreviewScroll.Focusable = false;
+            PreviewScroll.PreviewMouseWheel += PreviewScroll_PreviewMouseWheel;
+            PreviewScroll.PreviewMouseLeftButtonDown += PreviewScroll_PreviewMouseLeftButtonDown;
+            PreviewScroll.PreviewMouseMove += PreviewScroll_PreviewMouseMove;
+            PreviewScroll.PreviewMouseLeftButtonUp += PreviewScroll_PreviewMouseLeftButtonUp;
+            PreviewScroll.MouseLeave += PreviewScroll_MouseLeave;
+            PreviewScroll.LostMouseCapture += PreviewScroll_LostMouseCapture;
+
             Loaded += (_, __) => FitZoomToWindow();
             PreviewScroll.SizeChanged += (_, __) => FitZoomToWindow();
         }
@@ -32,6 +48,82 @@ namespace CalendarMaker
         private void Rebuild_Click(object sender, RoutedEventArgs e) => VM.BuildAllPages();
 
         private void Print_Click(object sender, RoutedEventArgs e) => VM.Print();
+
+        private void PreviewScroll_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            double oldZoom = ZoomSlider.Value;
+            double step = e.Delta > 0 ? ZoomStep : -ZoomStep;
+            double newZoom = Math.Max(ZoomSlider.Minimum, Math.Min(ZoomSlider.Maximum, oldZoom + step));
+            if (Math.Abs(newZoom - oldZoom) < 0.0001) return;
+
+            Point cursorInScroll = e.GetPosition(PreviewScroll);
+            Point cursorOnContent = e.GetPosition(ZoomHost);
+
+            ZoomSlider.Value = newZoom;
+            PreviewScroll.UpdateLayout();
+
+            double scaleRatio = newZoom / oldZoom;
+            double targetContentX = cursorOnContent.X * scaleRatio;
+            double targetContentY = cursorOnContent.Y * scaleRatio;
+
+            ScrollTo(targetContentX - cursorInScroll.X, targetContentY - cursorInScroll.Y);
+            e.Handled = true;
+        }
+
+        private void PreviewScroll_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            PreviewScroll.Focus();
+            _isPanning = true;
+            _panStart = e.GetPosition(PreviewScroll);
+            _panOrigin = new Point(PreviewScroll.HorizontalOffset, PreviewScroll.VerticalOffset);
+            PreviewScroll.CaptureMouse();
+            PreviewScroll.Cursor = Cursors.Hand;
+            e.Handled = true;
+        }
+
+        private void PreviewScroll_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_isPanning || e.LeftButton != MouseButtonState.Pressed) return;
+
+            Point current = e.GetPosition(PreviewScroll);
+            Vector delta = current - _panStart;
+
+            double offsetX = _panOrigin.X - delta.X;
+            double offsetY = _panOrigin.Y - delta.Y;
+
+            ScrollTo(offsetX, offsetY);
+            e.Handled = true;
+        }
+
+        private void PreviewScroll_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e) => EndPan();
+
+        private void PreviewScroll_MouseLeave(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed)
+            {
+                EndPan();
+            }
+        }
+
+        private void PreviewScroll_LostMouseCapture(object sender, MouseEventArgs e) => EndPan();
+
+        private void EndPan()
+        {
+            if (!_isPanning) return;
+
+            _isPanning = false;
+            if (PreviewScroll.IsMouseCaptured) PreviewScroll.ReleaseMouseCapture();
+            PreviewScroll.Cursor = Cursors.Arrow;
+        }
+
+        private void ScrollTo(double offsetX, double offsetY)
+        {
+            PreviewScroll.ScrollToHorizontalOffset(Clamp(offsetX, 0, PreviewScroll.ScrollableWidth));
+            PreviewScroll.ScrollToVerticalOffset(Clamp(offsetY, 0, PreviewScroll.ScrollableHeight));
+        }
+
+        private static double Clamp(double value, double min, double max)
+            => value < min ? min : (value > max ? max : value);
 
         // Image row handlers
         private void ImageBrowseRow_Click(object sender, RoutedEventArgs e)
@@ -103,3 +195,6 @@ namespace CalendarMaker
         }
     }
 }
+
+
+

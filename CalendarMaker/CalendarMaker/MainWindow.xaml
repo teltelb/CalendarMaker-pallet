@@ -35,19 +35,24 @@
             <ScrollViewer x:Name="PreviewScroll"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
-                          Background="#ECEFF1">
+                          Background="#ECEFF1"
+                          PreviewMouseWheel="PreviewScroll_PreviewMouseWheel"
+                          PreviewMouseLeftButtonDown="PreviewScroll_PreviewMouseLeftButtonDown"
+                          PreviewMouseMove="PreviewScroll_PreviewMouseMove"
+                          PreviewMouseLeftButtonUp="PreviewScroll_PreviewMouseLeftButtonUp"
+                          MouseLeave="PreviewScroll_MouseLeave"
+                          LostMouseCapture="PreviewScroll_LostMouseCapture">
                 <Grid>
                     <Grid x:Name="ZoomHost"
                           HorizontalAlignment="Center"
                           VerticalAlignment="Top"
                           Margin="16"
-                          RenderTransformOrigin="0.5,0.0"
                           UseLayoutRounding="True" SnapsToDevicePixels="True"
                           RenderOptions.BitmapScalingMode="HighQuality">
-                        <Grid.RenderTransform>
+                        <Grid.LayoutTransform>
                             <ScaleTransform ScaleX="{Binding ElementName=ZoomSlider, Path=Value}"
                                             ScaleY="{Binding ElementName=ZoomSlider, Path=Value}"/>
-                        </Grid.RenderTransform>
+                        </Grid.LayoutTransform>
 
                         <Grid.Effect>
                             <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.35"/>
@@ -168,6 +173,7 @@
         </ScrollViewer>
     </Grid>
 </Window>
+
 
 
 
