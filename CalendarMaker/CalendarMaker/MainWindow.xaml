@@ -16,7 +16,7 @@
             <ColumnDefinition Width="420"/>
         </Grid.ColumnDefinitions>
 
-        <!-- 蟾ｦ・壹・繝ｬ繝薙Η繝ｼ -->
+        <!-- 左側のプレビュー領域。ズームやパンの挙動を調整したい場合はここを編集。 -->
         <DockPanel Grid.Column="0" Background="#ECEFF1">
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Top" Margin="8">
                 <TextBlock Text="繝壹・繧ｸ:" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -58,7 +58,7 @@
                             <DropShadowEffect BlurRadius="18" ShadowDepth="4" Opacity="0.35"/>
                         </Grid.Effect>
 
-                        <!-- DIP繧ｵ繧､繧ｺ縺ｮ繝壹・繧ｸ繧・譫夊｡ｨ遉ｺ -->
+                        <!-- DIPサイズのページを1枚だけ表示。枠線や影の雰囲気はこの中で調整。 -->
                         <Border Width="{x:Static core:PageSpec.PageDipW}"
                                 Height="{x:Static core:PageSpec.PageDipH}"
                                 BorderBrush="#9AA0A6" BorderThickness="1" Background="White">
@@ -73,7 +73,7 @@
             </ScrollViewer>
         </DockPanel>
 
-        <!-- 蜿ｳ・夊ｨｭ螳・-->
+        <!-- 右側の設定パネル。タブの追加・削除はこのStackPanel内で行う。 -->
                         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <Border Padding="12">
                 <StackPanel>

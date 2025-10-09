@@ -3,6 +3,10 @@ using CalendarMaker.Models;
 
 namespace CalendarMaker.ViewModels
 {
+    /// <summary>
+    /// 1ページ分の表示データコンテナー。
+    /// レイアウト側で表示したい情報はここへプロパティを追加すると扱いやすい。
+    /// </summary>
     public class MonthPageViewModel
     {
         public int Year { get; set; }

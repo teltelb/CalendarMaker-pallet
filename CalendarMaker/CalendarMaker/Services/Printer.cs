@@ -4,6 +4,9 @@ using CalendarMaker.ViewModels;
 
 namespace CalendarMaker.Services
 {
+    /// <summary>
+    /// 印刷処理のラッパー。余白や用紙設定を細かく制御したい場合はここを編集。
+    /// </summary>
     public static class Printer
     {
         public static void Print(IList<MonthPageViewModel> pages)

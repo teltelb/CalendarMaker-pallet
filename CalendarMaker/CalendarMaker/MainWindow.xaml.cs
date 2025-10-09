@@ -12,8 +12,12 @@ using CalendarMaker.ViewModels;
 
 namespace CalendarMaker
 {
+    /// <summary>
+    /// アプリのメインウィンドウ。UIのイベントバインディングやビュー操作の調整はここで行います。
+    /// </summary>
     public partial class MainWindow : Window
     {
+        // マウスホイールで拡大縮小するときのステップ幅。好きな感度に変更可。
         private const double ZoomStep = 0.1;
         private bool _isPanning;
         private Point _panStart;
@@ -36,6 +40,7 @@ namespace CalendarMaker
             PreviewScroll.SizeChanged += (_, __) => FitZoomToWindow();
         }
 
+        // プレビュー領域のサイズに合わせてズーム倍率を自動調整。
         private void FitZoomToWindow()
         {
             if (PreviewScroll.ViewportWidth <= 0 || PreviewScroll.ViewportHeight <= 0) return;
@@ -49,6 +54,7 @@ namespace CalendarMaker
 
         private void Print_Click(object sender, RoutedEventArgs e) => VM.Print();
 
+        // ズームしたときにカーソル位置を基準にスクロール位置を補正。
         private void PreviewScroll_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
             double oldZoom = ZoomSlider.Value;
@@ -70,6 +76,7 @@ namespace CalendarMaker
             e.Handled = true;
         }
 
+        // 左ドラッグでパン操作を開始。
         private void PreviewScroll_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             PreviewScroll.Focus();
@@ -107,6 +114,7 @@ namespace CalendarMaker
 
         private void PreviewScroll_LostMouseCapture(object sender, MouseEventArgs e) => EndPan();
 
+        // パン操作の終了処理。カーソルやキャプチャ状態をリセット。
         private void EndPan()
         {
             if (!_isPanning) return;
@@ -125,11 +133,12 @@ namespace CalendarMaker
         private static double Clamp(double value, double min, double max)
             => value < min ? min : (value > max ? max : value);
 
-        // Image row handlers
+        // 画像設定タブ関連のイベントハンドラ群
         private void ImageBrowseRow_Click(object sender, RoutedEventArgs e)
         {
             if ((sender as FrameworkElement)?.Tag is ViewModels.MonthImageRow row)
             {
+                // 対応する拡張子を増やしたい場合はフィルター文字列を編集。
                 var dlg = new OpenFileDialog { Filter = "画像ファイル|*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff|すべて|*.*" };
                 if (dlg.ShowDialog() == true) row.ImagePath = dlg.FileName;
             }
@@ -153,7 +162,7 @@ namespace CalendarMaker
         }
 
 
-        // Export: capture snapshot on UI, then run export on STA thread
+        // エクスポート：UIをビットマップ化して別スレッドでPDF書き出し。
         private async void ExportPdf_Click(object sender, RoutedEventArgs e)
         {
             var pagesSnapshot = VM.Pages.ToList();

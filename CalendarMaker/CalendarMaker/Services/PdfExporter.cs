@@ -13,6 +13,10 @@ using System.Windows.Media.Imaging;
 
 namespace CalendarMaker.Services
 {
+    /// <summary>
+    /// PDF出力の手順をまとめたヘルパー。
+    /// ファイル名や保存形式を増やしたい場合はこのクラスで制御します。
+    /// </summary>
     public static class PdfExporter
     {
         const int Dpi = PageSpec.PdfDpi;
@@ -54,6 +58,8 @@ namespace CalendarMaker.Services
             progress?.Report(100);
         }
 
+        // カレンダーページをWPFコントロールとして描画し、PNGバイト列へ変換。
+        // PNG以外の形式にしたい場合はエンコーダーを差し替える。
         static byte[] RenderPageToPng(MonthPageViewModel vm, int w, int h, int dpi)
         {
             var control = new CalendarMaker.Views.MonthPageView

@@ -9,11 +9,16 @@ using CalendarMaker.Models;
 
 namespace CalendarMaker.ViewModels
 {
+    /// <summary>
+    /// メイン画面の状態とロジックを管理する ViewModel。
+    /// UIで扱うほぼ全てのデータがここを経由するため、拡張時はこのクラスを起点にすると迷いません。
+    /// </summary>
     public class MainViewModel : INotifyPropertyChanged
     {
         public ObservableCollection<MonthPageViewModel> Pages { get; } = new();
         public ObservableCollection<MonthImageRow> ImageRows { get; } = new();
 
+        // UI更新ループを避けるためのフラグ。画像リストをまとめて書き換える前にON。
         private bool _suspendImageRowSync;
 
         private int _selectedPageIndex;
@@ -82,6 +87,10 @@ namespace CalendarMaker.ViewModels
             BuildAllPages();
         }
 
+        /// <summary>
+        /// 設定値から月ページを再生成します。
+        /// レイアウトやヘッダー文言をカスタマイズしたいときは、このメソッドを中心に手を入れてください。
+        /// </summary>
         public void BuildAllPages()
         {
             SyncImageRowsToSettings();
@@ -210,6 +219,10 @@ namespace CalendarMaker.ViewModels
             BuildAllPages();
         }
 
+        /// <summary>
+        /// 画像設定タブで使用する行データを12か月分そろえます。
+        /// 13か月以上のレイアウトを目指す場合はループの上限を調整してください。
+        /// </summary>
         private void EnsureImageRows()
         {
             var rowsSnapshot = ImageRows.ToList();
@@ -228,6 +241,7 @@ namespace CalendarMaker.ViewModels
             }
         }
 
+        // 表示開始月を変えたときに各行の年月を更新。
         private void UpdateImageRowDates()
         {
             for (int i = 0; i < 12 && i < ImageRows.Count; i++)
@@ -248,6 +262,7 @@ namespace CalendarMaker.ViewModels
             }
         }
 
+        // ImageRows -> Settings へ反映。保存系処理はこの結果を使います。
         private void SyncImageRowsToSettings()
         {
             for (int i = 0; i < Settings.MonthImagePaths.Count; i++)
@@ -257,6 +272,7 @@ namespace CalendarMaker.ViewModels
             }
         }
 
+        // Settings -> ImageRows へ反映。外部から設定を読み込んだ際の逆同期に使用。
         private void RefreshImageRowsFromSettings()
         {
             var previous = _suspendImageRowSync;
@@ -274,6 +290,7 @@ namespace CalendarMaker.ViewModels
             }
         }
 
+        // 画像行の追加・削除にフックし、双方向の同期を維持。
         private void ImageRows_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.OldItems != null)
@@ -297,6 +314,7 @@ namespace CalendarMaker.ViewModels
             SyncImageRowsToSettings();
         }
 
+        // 個別行の画像パス変更を検知して再描画をトリガー。
         private void MonthImageRow_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (_suspendImageRowSync) return;

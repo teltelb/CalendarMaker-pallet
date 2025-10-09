@@ -10,17 +10,20 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- 闕ｳ莨∃夐包ｽｻ陷偵・-->
+        <!-- 上部のメイン画像エリア。画像の比率や余白はこのブロックで調整可能。 -->
         <Border x:Name="ImageHost"
                 Grid.Row="0"
                 ClipToBounds="True"
-                Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource MultiplyConverter}, ConverterParameter=0.75}">
+                Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource MultiplyConverter}, ConverterParameter=0.6666666667}"
+                Margin="0,0,0,20">
             <Image Source="{Binding ImagePath}"
-                   Stretch="UniformToFill"
+                   Stretch="Uniform"
+                   HorizontalAlignment="Center"
+                   VerticalAlignment="Center"
                    RenderOptions.BitmapScalingMode="HighQuality"/>
         </Border>
 
-        <!-- 髫募唱繝ｻ邵ｺ繝ｻ-->
+        <!-- 月名や和暦を表示するヘッダー。フォント調整はここが入口。 -->
         <Grid Grid.Row="1" Margin="80,0,80,0" VerticalAlignment="Center">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -54,7 +57,7 @@
             </Grid>
         </Grid>
 
-        <!-- 7x7 表 -->
+        <!-- 7x7 のカレンダー本体。セル内の内容を変える場合は DataTemplate を編集。 -->
         <Border Grid.Row="2" Margin="60,0,60,60" BorderBrush="#888" BorderThickness="1">
             <Border.Resources>
                 <DataTemplate x:Key="WeekdayTemplate">
@@ -91,15 +94,15 @@
                         </TextBlock>
                     </Border>
                 </DataTemplate>
-
-                                                                                <DataTemplate x:Key="DayCellTemplate">
+                                                         
+                <DataTemplate x:Key="DayCellTemplate">
                     <Border x:Name="CellBorder"
                             BorderBrush="#B0B4B9"
-                            Padding="12,18,12,12"
+                            Padding="3"
                             MinHeight="180">
                         <Border.Style>
                             <Style TargetType="Border">
-                                <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                <Setter Property="BorderThickness" Value="1"/>
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="6">
                                         <Setter Property="BorderThickness" Value="0,0,0,1"/>
@@ -151,8 +154,8 @@
                                        Text="{Binding Date.Day}"
                                        HorizontalAlignment="Left"
                                        VerticalAlignment="Top"
-                                       Margin="0,0,0,18"
-                                       FontSize="24">
+                                       Margin="4,4,0,10"
+                                       FontSize="20">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Foreground" Value="#222"/>
@@ -179,9 +182,7 @@
                                 </TextBlock.Style>
                             </TextBlock>
 
-                            <ItemsControl Grid.Row="1"
-                                          ItemsSource="{Binding AnniversaryDisplayLines}"
-                                          Margin="0,24,0,0" SnapsToDevicePixels="True">
+                            <ItemsControl Grid.Row="1" ItemsSource="{Binding AnniversaryDisplayLines}" Margin="4,28,4,4" SnapsToDevicePixels="True">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <StackPanel Orientation="Vertical"/>
@@ -250,6 +251,10 @@
         </Border>
     </Grid>
 </UserControl>
+
+
+
+
 
 
 

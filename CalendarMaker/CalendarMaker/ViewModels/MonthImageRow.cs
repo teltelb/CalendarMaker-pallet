@@ -7,6 +7,10 @@ using System.Windows.Media.Imaging;
 
 namespace CalendarMaker.ViewModels
 {
+    /// <summary>
+    /// 月ごとの画像設定をUIと同期するためのビューモデル。
+    /// プレビュー表示や追加のメタ情報を扱いたい場合はこのクラスを拡張します。
+    /// </summary>
     public class MonthImageRow : INotifyPropertyChanged
     {
         private DateOnly _monthDate;
@@ -24,6 +28,8 @@ namespace CalendarMaker.ViewModels
         private double? _aspectRatio;
         public double? AspectRatio { get => _aspectRatio; private set { if (_aspectRatio == value) return; _aspectRatio = value; OnPropertyChanged(); } }
 
+        // 画像パスから軽量プレビューを読み込み。
+        // 読み込みサイズやサムネイル品質を変えたい場合はここを調整。
         private void TryLoadPreview(string path)
         {
             try

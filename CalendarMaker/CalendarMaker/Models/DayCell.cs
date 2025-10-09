@@ -3,6 +3,10 @@ using System.Collections.Generic;
 
 namespace CalendarMaker.Models
 {
+    /// <summary>
+    /// 日付セル1マス分の情報。
+    /// 表示内容を増やしたい場合はプロパティを追加して XAML へバインド。
+    /// </summary>
     public class DayCell
     {
         public DateOnly Date { get; set; }

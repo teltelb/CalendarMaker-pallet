@@ -6,12 +6,25 @@ using CalendarMaker.Models;
 
 namespace CalendarMaker.Services
 {
+    /// <summary>
+    /// 月表示のロジックをまとめたビルダー。
+    /// 日付セルの構成を変えたいときはまずこのクラスを確認してください。
+    /// </summary>
     public static class CalendarBuilder
     {
+        // カレンダーの行数。6にしておくとどの月でも欠けなく表示できる。
         private const int WeeksToDisplay = 6;
+
+        // 1週間の列数。開始曜日を変えても列数はここで固定。
         private const int DaysPerWeek = 7;
+
+        // 1セルに表示する記念日の上限。増やしたい場合は View 側の ItemsControl と合わせて調整。
         private const int MaxDisplayAnniversaries = 3;
 
+        /// <summary>
+        /// 指定年月の 6x7 グリッドを生成し、表示用の DayCell リストとして返します。
+        /// 例外日や特殊な配色を差し込みたい場合は、この処理にフックするのが近道です。
+        /// </summary>
         public static List<DayCell> BuildMonthGrid(int year, int month, DayOfWeek firstDayOfWeek, Dictionary<DateOnly, List<string>> annivs)
         {
             var first = new DateOnly(year, month, 1);
@@ -55,6 +68,7 @@ namespace CalendarMaker.Services
             return cells;
         }
 
+        // 1日分のセル情報を組み立て。AnniversaryDisplayLines の並びはここで制御。
         static DayCell MakeCell(DateOnly date, bool current, Dictionary<DateOnly, List<string>> annivs)
         {
             if (!annivs.TryGetValue(date, out var lines))
@@ -76,6 +90,10 @@ namespace CalendarMaker.Services
             };
         }
 
+        /// <summary>
+        /// 日本語ヘッダーに表示する和暦テキストを生成。
+        /// 表記ゆれ（例：元号略称）を変えたい場合はここを書き換えます。
+        /// </summary>
         public static string FormatEraText(DateOnly d)
         {
             var culture = new CultureInfo("ja-JP") { DateTimeFormat = { Calendar = new JapaneseCalendar() } };
@@ -84,6 +102,9 @@ namespace CalendarMaker.Services
             return $"{d.Year}年（{wareki}）";
         }
 
+        /// <summary>
+        /// 曜日ラベルの配列を生成。英語表記などに差し替えたい場合はこの配列を入れ替えるだけでOK。
+        /// </summary>
         public static string[] BuildWeekdayLabels(StartWeekday start)
         {
             string[] baseJP = { "日", "月", "火", "水", "木", "金", "土" };
