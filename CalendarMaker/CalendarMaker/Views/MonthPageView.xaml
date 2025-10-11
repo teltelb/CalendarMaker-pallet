@@ -15,7 +15,7 @@
                 Grid.Row="0"
                 ClipToBounds="True"
                 Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource MultiplyConverter}, ConverterParameter=0.6666666667}"
-                Margin="0,0,0,20">
+                Margin="3">
             <Image Source="{Binding ImagePath}"
                    Stretch="Uniform"
                    HorizontalAlignment="Center"
@@ -24,7 +24,7 @@
         </Border>
 
         <!-- 月名や和暦を表示するヘッダー。フォント調整はここが入口。 -->
-        <Grid Grid.Row="1" Margin="80,0,80,0" VerticalAlignment="Center">
+        <Grid Grid.Row="1" Margin="3" VerticalAlignment="Center">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
@@ -58,7 +58,7 @@
         </Grid>
 
         <!-- 7x7 のカレンダー本体。セル内の内容を変える場合は DataTemplate を編集。 -->
-        <Border Grid.Row="2" Margin="60,0,60,60" BorderBrush="#888" BorderThickness="1">
+        <Border Grid.Row="2" Margin="3" BorderBrush="#888" BorderThickness="1">
             <Border.Resources>
                 <DataTemplate x:Key="WeekdayTemplate">
                     <Border BorderBrush="#B0B4B9">
