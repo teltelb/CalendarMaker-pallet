@@ -36,8 +36,25 @@ namespace CalendarMaker
             PreviewScroll.MouseLeave += PreviewScroll_MouseLeave;
             PreviewScroll.LostMouseCapture += PreviewScroll_LostMouseCapture;
 
-            Loaded += (_, __) => FitZoomToWindow();
+            Loaded += MainWindow_Loaded;
             PreviewScroll.SizeChanged += (_, __) => FitZoomToWindow();
+        }
+
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            FitZoomToWindow();
+            try
+            {
+                await VM.RefreshHolidaysAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                // ignore cancellation
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Holiday fetch failed: {ex}");
+            }
         }
 
         // プレビュー領域のサイズに合わせてズーム倍率を自動調整。

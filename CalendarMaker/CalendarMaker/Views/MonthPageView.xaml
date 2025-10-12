@@ -7,17 +7,17 @@
              UseLayoutRounding="True"
              SnapsToDevicePixels="True">
 
-    <Grid Background="White">
+    <Grid Background="White" Margin="3" Width="{x:Static core:PageSpec.PageDipW}" Height="{x:Static core:PageSpec.PageDipH}" SnapsToDevicePixels="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Top image area -->
+        <!-- Preview image -->
         <Border x:Name="ImageHost"
                 Grid.Row="0"
-                Margin="3"
+                Margin="0,0,0,6"
                 ClipToBounds="True"
                 Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource MultiplyConverter}, ConverterParameter=0.6666666667}">
             <Image Source="{Binding ImagePath}"
@@ -28,18 +28,18 @@
         </Border>
 
         <!-- Header -->
-        <Grid Grid.Row="1" Margin="3" VerticalAlignment="Center">
+        <Grid Grid.Row="1" Margin="0,0,0,6" VerticalAlignment="Center">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Text="{Binding Month}"
+                       FontFamily="Impact"
                        FontSize="102"
                        FontWeight="Bold"
-                       FontFamily="Impact"
                        VerticalAlignment="Center"
-                       Margin="0,0,16,0"/>
+                       Margin="0,0,12,0"/>
 
             <StackPanel Grid.Column="1" VerticalAlignment="Center">
                 <TextBlock Text="{Binding MonthEnglish}" FontSize="40" FontWeight="Bold"/>
@@ -49,7 +49,6 @@
 
         <!-- Calendar body -->
         <Border Grid.Row="2"
-                Margin="3"
                 BorderBrush="#888"
                 BorderThickness="1"
                 SnapsToDevicePixels="True">
@@ -59,39 +58,63 @@
                     <RowDefinition Height="*"/>
                 </Grid.RowDefinitions>
 
-                <!-- Weekday row -->
-                <UniformGrid Grid.Row="0" Columns="7" SnapsToDevicePixels="True">
-                    <Border BorderBrush="#B0B4B9" BorderThickness="1">
-                        <TextBlock Text="Sun" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="Red" Margin="0,2"/>
-                    </Border>
-                    <Border BorderBrush="#B0B4B9" BorderThickness="1">
-                        <TextBlock Text="Mon" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Margin="0,2"/>
-                    </Border>
-                    <Border BorderBrush="#B0B4B9" BorderThickness="1">
-                        <TextBlock Text="Tue" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Margin="0,2"/>
-                    </Border>
-                    <Border BorderBrush="#B0B4B9" BorderThickness="1">
-                        <TextBlock Text="Wed" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Margin="0,2"/>
-                    </Border>
-                    <Border BorderBrush="#B0B4B9" BorderThickness="1">
-                        <TextBlock Text="Thu" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Margin="0,2"/>
-                    </Border>
-                    <Border BorderBrush="#B0B4B9" BorderThickness="1">
-                        <TextBlock Text="Fri" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Margin="0,2"/>
-                    </Border>
-                    <Border BorderBrush="#B0B4B9" BorderThickness="1">
-                        <TextBlock Text="Sat" HorizontalAlignment="Center" VerticalAlignment="Center" FontWeight="Bold" Foreground="Blue" Margin="0,2"/>
-                    </Border>
-                </UniformGrid>
+                <!-- Weekday labels -->
+                <ItemsControl Grid.Row="0"
+                              ItemsSource="{Binding WeekdayLabels}"
+                              AlternationCount="7"
+                              SnapsToDevicePixels="True">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="7"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource Self}, Path=(ItemsControl.AlternationIndex)}"/>
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border BorderBrush="#B0B4B9" BorderThickness="1" SnapsToDevicePixels="True">
+                                <TextBlock Text="{Binding}"
+                                           FontWeight="SemiBold"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Center"
+                                           Margin="0,2">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#222"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="0">
+                                                    <Setter Property="Foreground" Value="#C00"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="6">
+                                                    <Setter Property="Foreground" Value="#06C"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
 
                 <!-- Day cells -->
                 <ItemsControl Grid.Row="1"
-                              ItemsSource="{Binding Cells}">
+                              ItemsSource="{Binding Cells}"
+                              AlternationCount="42"
+                              SnapsToDevicePixels="True">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <UniformGrid Columns="7" Rows="6"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Tag" Value="{Binding RelativeSource={RelativeSource Self}, Path=(ItemsControl.AlternationIndex)}"/>
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Border BorderBrush="#B0B4B9"
@@ -113,7 +136,7 @@
                                                FontSize="20">
                                         <TextBlock.Style>
                                             <Style TargetType="TextBlock">
-                                                <Setter Property="Foreground" Value="Black"/>
+                                                <Setter Property="Foreground" Value="#222"/>
                                                 <Style.Triggers>
                                                     <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
                                                         <Setter Property="Foreground" Value="#BBBBBB"/>

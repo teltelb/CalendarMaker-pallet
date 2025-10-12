@@ -5,20 +5,25 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using CalendarMaker.Models;
+using CalendarMaker.Services;
 
 namespace CalendarMaker.ViewModels
 {
     /// <summary>
-    /// メイン画面の状態とロジックを管理する ViewModel。
-    /// UIで扱うほぼ全てのデータがここを経由するため、拡張時はこのクラスを起点にすると迷いません。
+    /// ���C����ʂ̏�Ԃƃ��W�b�N��Ǘ����� ViewModel�B
+    /// UI�ň����قڑS�Ẵf�[�^��������o�R���邽�߁A�g�����͂��̃N���X��N�_�ɂ���Ɩ����܂���B
     /// </summary>
     public class MainViewModel : INotifyPropertyChanged
     {
         public ObservableCollection<MonthPageViewModel> Pages { get; } = new();
         public ObservableCollection<MonthImageRow> ImageRows { get; } = new();
 
-        // UI更新ループを避けるためのフラグ。画像リストをまとめて書き換える前にON。
+        private readonly NationalHolidayService _holidayService = new();
+
+        // UI�X�V���[�v�����邽�߂̃t���O�B�摜���X�g��܂Ƃ߂ď���������O��ON�B
         private bool _suspendImageRowSync;
 
         private int _selectedPageIndex;
@@ -88,8 +93,8 @@ namespace CalendarMaker.ViewModels
         }
 
         /// <summary>
-        /// 設定値から月ページを再生成します。
-        /// レイアウトやヘッダー文言をカスタマイズしたいときは、このメソッドを中心に手を入れてください。
+        /// �ݒ�l���猎�y�[�W��Đ������܂��B
+        /// ���C�A�E�g��w�b�_�[������J�X�^�}�C�Y�������Ƃ��́A���̃��\�b�h�𒆐S�Ɏ�����Ă��������B
         /// </summary>
         public void BuildAllPages()
         {
@@ -185,6 +190,70 @@ namespace CalendarMaker.ViewModels
             BuildAllPages();
         }
 
+        public async Task RefreshHolidaysAsync(CancellationToken cancellationToken = default)
+        {
+            var startMonth = Settings.StartMonth;
+            var endMonth = startMonth.AddMonths(11);
+
+            try
+            {
+                var result = await _holidayService.FetchHolidaysAsync(
+                    startMonth.Year,
+                    endMonth.Year,
+                    Settings.HolidaysSourceLastModified,
+                    cancellationToken);
+
+                Settings.HolidaysLastFetched = DateTimeOffset.Now;
+
+                if (result.NotModified)
+                {
+                    if (Settings.Anniversaries.Any(a => a.IsManagedHoliday))
+                    {
+                        BuildAllPages();
+                        return;
+                    }
+
+                    result = await _holidayService.FetchHolidaysAsync(
+                        startMonth.Year,
+                        endMonth.Year,
+                        null,
+                        cancellationToken);
+                }
+
+                var managed = Settings.Anniversaries.Where(a => a.IsManagedHoliday).ToList();
+                foreach (var ann in managed)
+                {
+                    Settings.Anniversaries.Remove(ann);
+                }
+
+                foreach (var holiday in result.Holidays)
+                {
+                    if (holiday.Date < startMonth || holiday.Date > endMonth) continue;
+
+                    if (!Settings.Anniversaries.Any(a => a.Date == holiday.Date && string.Equals(a.Label, holiday.Name, StringComparison.Ordinal)))
+                    {
+                        Settings.Anniversaries.Add(new Anniversary
+                        {
+                            Date = holiday.Date,
+                            Label = holiday.Name,
+                            IsManagedHoliday = true
+                        });
+                    }
+                }
+
+                Settings.HolidaysSourceLastModified = result.LastModified;
+                BuildAllPages();
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch
+            {
+                // �l�b�g���[�N�G���[�Ȃǂَ͖E���A�����f�[�^�ő��s
+            }
+        }
+
         public void MoveImageDown(MonthImageRow row)
         {
             if (row is null) return;
@@ -220,8 +289,8 @@ namespace CalendarMaker.ViewModels
         }
 
         /// <summary>
-        /// 画像設定タブで使用する行データを12か月分そろえます。
-        /// 13か月以上のレイアウトを目指す場合はループの上限を調整してください。
+        /// �摜�ݒ�^�u�Ŏg�p����s�f�[�^��12���������낦�܂��B
+        /// 13�����ȏ�̃��C�A�E�g��ڎw���ꍇ�̓��[�v�̏���𒲐����Ă��������B
         /// </summary>
         private void EnsureImageRows()
         {
@@ -241,7 +310,7 @@ namespace CalendarMaker.ViewModels
             }
         }
 
-        // 表示開始月を変えたときに各行の年月を更新。
+        // �\���J�n����ς����Ƃ��Ɋe�s�̔N����X�V�B
         private void UpdateImageRowDates()
         {
             for (int i = 0; i < 12 && i < ImageRows.Count; i++)
@@ -262,7 +331,7 @@ namespace CalendarMaker.ViewModels
             }
         }
 
-        // ImageRows -> Settings へ反映。保存系処理はこの結果を使います。
+        // ImageRows -> Settings �֔��f�B�ۑ��n�����͂��̌��ʂ�g���܂��B
         private void SyncImageRowsToSettings()
         {
             for (int i = 0; i < Settings.MonthImagePaths.Count; i++)
@@ -272,7 +341,7 @@ namespace CalendarMaker.ViewModels
             }
         }
 
-        // Settings -> ImageRows へ反映。外部から設定を読み込んだ際の逆同期に使用。
+        // Settings -> ImageRows �֔��f�B�O������ݒ��ǂݍ��񂾍ۂ̋t�����Ɏg�p�B
         private void RefreshImageRowsFromSettings()
         {
             var previous = _suspendImageRowSync;
@@ -290,7 +359,7 @@ namespace CalendarMaker.ViewModels
             }
         }
 
-        // 画像行の追加・削除にフックし、双方向の同期を維持。
+        // �摜�s�̒ǉ��E�폜�Ƀt�b�N���A�o�����̓�����ێ��B
         private void ImageRows_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
             if (e.OldItems != null)
@@ -314,7 +383,7 @@ namespace CalendarMaker.ViewModels
             SyncImageRowsToSettings();
         }
 
-        // 個別行の画像パス変更を検知して再描画をトリガー。
+        // �ʍs�̉摜�p�X�ύX����m���čĕ`���g���K�[�B
         private void MonthImageRow_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (_suspendImageRowSync) return;
