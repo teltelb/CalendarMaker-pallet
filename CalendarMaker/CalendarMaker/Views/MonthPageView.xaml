@@ -138,6 +138,9 @@
                                             <Style TargetType="TextBlock">
                                                 <Setter Property="Foreground" Value="#222"/>
                                                 <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsHoliday}" Value="True">
+                                                        <Setter Property="Foreground" Value="#C00"/>
+                                                    </DataTrigger>
                                                     <DataTrigger Binding="{Binding IsCurrentMonth}" Value="False">
                                                         <Setter Property="Foreground" Value="#BBBBBB"/>
                                                     </DataTrigger>

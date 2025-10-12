@@ -18,5 +18,6 @@ namespace CalendarMaker.Models
         public int ColumnIndex { get; set; }
         public bool IsLastRow { get; set; }
         public bool IsLastColumn { get; set; }
+        public bool IsHoliday { get; set; }
     }
 }
