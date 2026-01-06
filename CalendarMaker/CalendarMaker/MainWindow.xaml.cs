@@ -45,7 +45,7 @@ namespace CalendarMaker
             FitZoomToWindow();
             try
             {
-                await VM.RefreshHolidaysAsync();
+                await VM.RefreshHolidaysAsync(suppressErrors: true);
             }
             catch (OperationCanceledException)
             {
@@ -67,9 +67,87 @@ namespace CalendarMaker
             ZoomSlider.Value = Math.Max(0.1, Math.Min(sx, sy));
         }
 
+        private void PrevPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (VM.Pages.Count == 0) return;
+            VM.SelectedPageIndex = Math.Max(0, VM.SelectedPageIndex - 1);
+        }
+
+        private void NextPage_Click(object sender, RoutedEventArgs e)
+        {
+            if (VM.Pages.Count == 0) return;
+            VM.SelectedPageIndex = Math.Min(VM.Pages.Count - 1, VM.SelectedPageIndex + 1);
+        }
+
+        private void MonthImagesGrid_PreviewDragOver(object sender, DragEventArgs e)
+        {
+            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+            e.Handled = true;
+        }
+
+        private void MonthImagesGrid_Drop(object sender, DragEventArgs e)
+        {
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
+            if (e.Data.GetData(DataFormats.FileDrop) is not string[] paths) return;
+
+            int startIndex = 0;
+
+            if (sender is DataGrid grid)
+            {
+                var pos = e.GetPosition(grid);
+                var hit = grid.InputHitTest(pos) as DependencyObject;
+                var row = FindVisualParent<DataGridRow>(hit);
+
+                if (row?.Item is MonthImageRow rowItem)
+                {
+                    startIndex = VM.ImageRows.IndexOf(rowItem);
+                }
+                else if (grid.SelectedItem is MonthImageRow selected)
+                {
+                    startIndex = VM.ImageRows.IndexOf(selected);
+                }
+            }
+
+            VM.SetMonthImagesFromIndex(startIndex, paths);
+            e.Handled = true;
+        }
+
+        private static T? FindVisualParent<T>(DependencyObject? child) where T : DependencyObject
+        {
+            while (child != null)
+            {
+                if (child is T t) return t;
+                child = VisualTreeHelper.GetParent(child);
+            }
+
+            return null;
+        }
+
         private void Rebuild_Click(object sender, RoutedEventArgs e) => VM.BuildAllPages();
 
         private void Print_Click(object sender, RoutedEventArgs e) => VM.Print();
+
+        private async void RefreshHolidays_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button) button.IsEnabled = false;
+            try
+            {
+                await VM.RefreshHolidaysAsync(suppressErrors: false);
+                MessageBox.Show("祝日を更新しました。");
+            }
+            catch (OperationCanceledException)
+            {
+                MessageBox.Show("祝日の更新をキャンセルしました。");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("祝日の更新でエラーが発生しました。\n" + ex.Message);
+            }
+            finally
+            {
+                if (sender is Button button2) button2.IsEnabled = true;
+            }
+        }
 
         // ズームしたときにカーソル位置を基準にスクロール位置を補正。
         private void PreviewScroll_PreviewMouseWheel(object sender, MouseWheelEventArgs e)

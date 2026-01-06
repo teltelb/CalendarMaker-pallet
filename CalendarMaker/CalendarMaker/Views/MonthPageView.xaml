@@ -7,51 +7,56 @@
              UseLayoutRounding="True"
              SnapsToDevicePixels="True">
 
-    <Grid Background="White" Margin="3" Width="{x:Static core:PageSpec.PageDipW}" Height="{x:Static core:PageSpec.PageDipH}" SnapsToDevicePixels="True">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-        </Grid.RowDefinitions>
+    <Border Background="White"
+            Padding="5"
+            Width="{x:Static core:PageSpec.PageDipW}"
+            Height="{x:Static core:PageSpec.PageDipH}"
+            SnapsToDevicePixels="True">
+        <Grid SnapsToDevicePixels="True">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
 
-        <!-- Preview image -->
-        <Border x:Name="ImageHost"
-                Grid.Row="0"
-                Margin="0,0,0,6"
-                ClipToBounds="True"
-                Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource MultiplyConverter}, ConverterParameter=0.6666666667}">
-            <Image Source="{Binding ImagePath}"
-                   Stretch="Uniform"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   RenderOptions.BitmapScalingMode="HighQuality"/>
-        </Border>
-
-        <!-- Header -->
-        <Grid Grid.Row="1" Margin="0,0,0,6" VerticalAlignment="Center">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
-            <TextBlock Text="{Binding Month}"
-                       FontFamily="Impact"
-                       FontSize="102"
-                       FontWeight="Bold"
+            <!-- Preview image -->
+            <Border x:Name="ImageHost"
+                    Grid.Row="0"
+                    Margin="0,0,0,6"
+                    ClipToBounds="True"
+                    Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource MultiplyConverter}, ConverterParameter=0.6666666667}">
+                <Image Source="{Binding ImagePath}"
+                       Stretch="Uniform"
+                       HorizontalAlignment="Center"
                        VerticalAlignment="Center"
-                       Margin="0,0,12,0"/>
+                       RenderOptions.BitmapScalingMode="HighQuality"/>
+            </Border>
 
-            <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                <TextBlock Text="{Binding MonthEnglish}" FontSize="40" FontWeight="Bold"/>
-                <TextBlock Text="{Binding HeaderEraText}" FontSize="20"/>
-            </StackPanel>
-        </Grid>
+            <!-- Header -->
+            <Grid Grid.Row="1" Margin="0,0,0,6" VerticalAlignment="Center">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-        <!-- Calendar body -->
-        <Border Grid.Row="2"
-                BorderBrush="#888"
-                BorderThickness="1"
-                SnapsToDevicePixels="True">
+                <TextBlock Text="{Binding Month}"
+                           FontFamily="Impact"
+                           FontSize="102"
+                           FontWeight="Bold"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"/>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding MonthEnglish}" FontSize="40" FontWeight="Bold"/>
+                    <TextBlock Text="{Binding HeaderEraText}" FontSize="20"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Calendar body -->
+            <Border Grid.Row="2"
+                    BorderBrush="#888"
+                    BorderThickness="1"
+                    SnapsToDevicePixels="True">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
@@ -81,19 +86,12 @@
                                            HorizontalAlignment="Center"
                                            VerticalAlignment="Center"
                                            Margin="0,2">
-                                    <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
-                                            <Setter Property="Foreground" Value="#222"/>
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="0">
-                                                    <Setter Property="Foreground" Value="#C00"/>
-                                                </DataTrigger>
-                                                <DataTrigger Binding="{Binding RelativeSource={RelativeSource AncestorType=ContentPresenter}, Path=Tag}" Value="6">
-                                                    <Setter Property="Foreground" Value="#06C"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </TextBlock.Style>
+                                    <TextBlock.Foreground>
+                                        <MultiBinding Converter="{StaticResource WeekdayForegroundConverter}">
+                                            <Binding RelativeSource="{RelativeSource AncestorType=ContentPresenter}" Path="Tag"/>
+                                            <Binding RelativeSource="{RelativeSource AncestorType=ItemsControl}" Path="DataContext.StartWeekday"/>
+                                        </MultiBinding>
+                                    </TextBlock.Foreground>
                                 </TextBlock>
                             </Border>
                         </DataTemplate>
@@ -166,7 +164,8 @@
                                     <ItemsControl Grid.Row="1"
                                                   ItemsSource="{Binding AnniversaryDisplayLines}"
                                                   Margin="0"
-                                                  SnapsToDevicePixels="True">
+                                                  SnapsToDevicePixels="True"
+                                                  ClipToBounds="True">
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <StackPanel Orientation="Vertical"/>
@@ -174,13 +173,14 @@
                                         </ItemsControl.ItemsPanel>
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Border BorderBrush="#D0D0D0" BorderThickness="0,0,0,1" Padding="0,0,0,2" Margin="0,0,0,2">
+                                                <Border BorderBrush="#D0D0D0" BorderThickness="0" Padding="0" Margin="0,0,0,1">
                                                     <TextBlock Text="{Binding}"
-                                                               FontSize="14"
+                                                               FontSize="10"
                                                                Foreground="#C00"
-                                                               TextWrapping="Wrap"
+                                                               TextWrapping="NoWrap"
+                                                               TextTrimming="CharacterEllipsis"
                                                                LineStackingStrategy="BlockLineHeight"
-                                                               LineHeight="16"/>
+                                                               LineHeight="12"/>
                                                 </Border>
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
@@ -191,6 +191,7 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </Grid>
-        </Border>
-    </Grid>
+            </Border>
+        </Grid>
+    </Border>
 </UserControl>

@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -104,11 +105,15 @@ namespace CalendarMaker.ViewModels
                 ? null
                 : new DateOnly(CurrentPage.Year, CurrentPage.Month, 1);
 
-            var anniversaries = Settings.Anniversaries
+            var combinedEvents = Settings.Anniversaries.Concat(Settings.Holidays);
+
+            var anniversaries = combinedEvents
                 .GroupBy(a => a.Date)
                 .ToDictionary(
                     g => g.Key,
                     g => g.Select(x => x.Label).Where(l => !string.IsNullOrWhiteSpace(l)).ToList());
+
+            var holidayDates = Settings.Holidays.Select(h => h.Date).ToHashSet();
 
             Pages.Clear();
             var first = Settings.StartMonth;
@@ -122,6 +127,11 @@ namespace CalendarMaker.ViewModels
                     (DayOfWeek)Settings.StartWeekday,
                     anniversaries);
 
+                foreach (var cell in cells)
+                {
+                    cell.IsHoliday = holidayDates.Contains(cell.Date);
+                }
+
                 var vm = new MonthPageViewModel
                 {
                     Year = month.Year,
@@ -130,7 +140,8 @@ namespace CalendarMaker.ViewModels
                     HeaderEraText = CalendarMaker.Services.CalendarBuilder.FormatEraText(month),
                     Cells = new ObservableCollection<DayCell>(cells),
                     ImagePath = (i < Settings.MonthImagePaths.Count) ? Settings.MonthImagePaths[i] : string.Empty,
-                    WeekdayLabels = CalendarMaker.Services.CalendarBuilder.BuildWeekdayLabels(Settings.StartWeekday)
+                    WeekdayLabels = CalendarMaker.Services.CalendarBuilder.BuildWeekdayLabels(Settings.StartWeekday),
+                    StartWeekday = Settings.StartWeekday
                 };
 
                 Pages.Add(vm);
@@ -190,7 +201,57 @@ namespace CalendarMaker.ViewModels
             BuildAllPages();
         }
 
-        public async Task RefreshHolidaysAsync(CancellationToken cancellationToken = default)
+        public void SetMonthImagesFromIndex(int startIndex, IEnumerable<string> imagePaths)
+        {
+            if (imagePaths is null) return;
+            if (ImageRows.Count == 0) return;
+            if (startIndex < 0) startIndex = 0;
+            if (startIndex >= ImageRows.Count) return;
+
+            var paths = imagePaths
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => p.Trim())
+                .Where(File.Exists)
+                .Where(IsImageFilePath)
+                .ToList();
+
+            if (paths.Count == 0) return;
+
+            var previous = _suspendImageRowSync;
+            _suspendImageRowSync = true;
+            try
+            {
+                int index = startIndex;
+                foreach (var path in paths)
+                {
+                    if (index >= ImageRows.Count) break;
+                    ImageRows[index].ImagePath = path;
+                    index++;
+                }
+            }
+            finally
+            {
+                _suspendImageRowSync = previous;
+            }
+
+            SyncImageRowsToSettings();
+            BuildAllPages();
+        }
+
+        private static bool IsImageFilePath(string path)
+        {
+            var ext = Path.GetExtension(path);
+            if (string.IsNullOrWhiteSpace(ext)) return false;
+
+            return ext.Equals(".png", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".jpg", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".bmp", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".tif", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".tiff", StringComparison.OrdinalIgnoreCase);
+        }
+
+        public async Task<bool> RefreshHolidaysAsync(bool suppressErrors = true, CancellationToken cancellationToken = default)
         {
             var startMonth = Settings.StartMonth;
             var endMonth = startMonth.AddMonths(11);
@@ -207,10 +268,10 @@ namespace CalendarMaker.ViewModels
 
                 if (result.NotModified)
                 {
-                    if (Settings.Anniversaries.Any(a => a.IsManagedHoliday))
+                    if (Settings.HolidaysRangeStart == startMonth && Settings.HolidaysRangeEnd == endMonth)
                     {
                         BuildAllPages();
-                        return;
+                        return true;
                     }
 
                     result = await _holidayService.FetchHolidaysAsync(
@@ -220,11 +281,7 @@ namespace CalendarMaker.ViewModels
                         cancellationToken);
                 }
 
-                var managed = Settings.Anniversaries.Where(a => a.IsManagedHoliday).ToList();
-                foreach (var ann in managed)
-                {
-                    Settings.Anniversaries.Remove(ann);
-                }
+                Settings.Holidays.Clear();
 
                 foreach (var holiday in result.Holidays)
                 {
@@ -232,24 +289,34 @@ namespace CalendarMaker.ViewModels
 
                     if (!Settings.Anniversaries.Any(a => a.Date == holiday.Date && string.Equals(a.Label, holiday.Name, StringComparison.Ordinal)))
                     {
-                        Settings.Anniversaries.Add(new Anniversary
+                        var label = holiday.Name;
+                        if (label.Contains("振替休日", StringComparison.Ordinal))
+                        {
+                            label = "振替休日";
+                        }
+
+                        Settings.Holidays.Add(new Anniversary
                         {
                             Date = holiday.Date,
-                            Label = holiday.Name,
+                            Label = label,
                             IsManagedHoliday = true
                         });
                     }
                 }
 
                 Settings.HolidaysSourceLastModified = result.LastModified;
+                Settings.HolidaysRangeStart = startMonth;
+                Settings.HolidaysRangeEnd = endMonth;
                 BuildAllPages();
+                return true;
             }
             catch (OperationCanceledException)
             {
                 throw;
             }
-            catch
+            catch when (suppressErrors)
             {
+                return false;
                 // �l�b�g���[�N�G���[�Ȃǂَ͖E���A�����f�[�^�ő��s
             }
         }

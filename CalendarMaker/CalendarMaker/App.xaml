@@ -9,5 +9,6 @@
         <conv:IndexPlusOneConverter x:Key="IndexPlusOneConverter"/>
         <conv:MultiplyConverter x:Key="MultiplyConverter"/>
         <conv:AspectHeightFromWidthConverter x:Key="AspectHeightFromWidthConverter" PageAspectFactor="0.6666667"/>
+        <conv:WeekdayForegroundConverter x:Key="WeekdayForegroundConverter"/>
     </Application.Resources>
 </Application>

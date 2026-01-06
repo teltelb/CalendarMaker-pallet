@@ -16,6 +16,7 @@ namespace CalendarMaker.ViewModels
         public string? ImagePath { get; set; }
         public ObservableCollection<DayCell> Cells { get; set; } = new();
         public string[] WeekdayLabels { get; set; } = new string[7];
+        public StartWeekday StartWeekday { get; set; }
         public double? ImageAspectRatio { get; set; }
     }
 }

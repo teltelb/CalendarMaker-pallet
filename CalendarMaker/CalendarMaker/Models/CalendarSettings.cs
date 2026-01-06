@@ -35,11 +35,16 @@ namespace CalendarMaker.Models
         // 日付セルに表示するイベント（記念日など）。
         public ObservableCollection<Anniversary> Anniversaries { get; } = new();
 
+        // 祝日（外部データから取り込むもの）。一覧は長くなりがちなので別管理。
+        public ObservableCollection<Anniversary> Holidays { get; } = new();
+
         // 月ごとの画像パスを保持。0〜11のインデックスで該当月を参照。
         public ObservableCollection<string> MonthImagePaths { get; } = new(Enumerable.Repeat(string.Empty, 12));
 
         public DateTimeOffset? HolidaysLastFetched { get; set; }
         public DateTimeOffset? HolidaysSourceLastModified { get; set; }
+        public DateOnly? HolidaysRangeStart { get; set; }
+        public DateOnly? HolidaysRangeEnd { get; set; }
 
         /// <summary>
         /// ViewModel側でリストと設定を同期するための補助メソッド。
