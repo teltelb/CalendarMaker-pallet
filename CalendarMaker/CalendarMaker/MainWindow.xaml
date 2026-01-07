@@ -5,6 +5,7 @@
         xmlns:views="clr-namespace:CalendarMaker.Views"
         xmlns:conv="clr-namespace:CalendarMaker.Converters"
         xmlns:core="clr-namespace:CalendarMaker"
+        PreviewKeyDown="MainWindow_PreviewKeyDown"
         Title="Calendar Maker" Width="1400" Height="900">
     <Window.DataContext>
         <vm:MainViewModel/>
@@ -142,7 +143,7 @@
                         <TabItem Header="月別画像">
                             <StackPanel Margin="8">
                                 <TextBlock Text="月別画像（開始月から順）" FontWeight="Bold" Margin="0,0,0,10"/>
-                                <TextBlock Text="各月の上部に表示する画像を設定します。「参照…」で選択し、↑↓で並び替えできます。画像ファイルをドラッグ&amp;ドロップするとまとめて設定できます。"
+                                <TextBlock Text="各月の上部に表示する画像を設定します。画像ファイルをドラッグ&amp;ドロップするとまとめて設定できます。行同士をドラッグ&amp;ドロップすると画像だけ別の月へ移動できます。行をダブルクリックすると切り抜き位置を調整できます（3:2）。"
                                            Foreground="#555"
                                            TextWrapping="Wrap"
                                            Margin="0,0,0,12"/>
@@ -155,8 +156,12 @@
                                           IsReadOnly="True"
                                           HeadersVisibility="Column"
                                           AllowDrop="True"
+                                          PreviewMouseLeftButtonDown="MonthImagesGrid_PreviewMouseLeftButtonDown"
+                                          PreviewMouseMove="MonthImagesGrid_PreviewMouseMove"
                                           PreviewDragOver="MonthImagesGrid_PreviewDragOver"
                                           Drop="MonthImagesGrid_Drop"
+                                          MouseDoubleClick="MonthImagesGrid_MouseDoubleClick"
+                                          PreviewKeyDown="MonthImagesGrid_PreviewKeyDown"
                                           RowBackground="White"
                                           AlternatingRowBackground="#F6F7F9"
                                           RowHeight="56"
@@ -165,9 +170,14 @@
                                         <DataGridTextColumn Header="年月日" Binding="{Binding MonthLabel}" Width="90"/>
                                         <DataGridTemplateColumn Header="画像プレビュー" Width="140">
                                             <DataGridTemplateColumn.CellTemplate>
-                                                <DataTemplate>
-                                                    <Border Width="120" Height="50" BorderBrush="#CCC" BorderThickness="1" Background="White">
-                                                        <Image Source="{Binding Preview}" Stretch="Uniform"/>
+                                                 <DataTemplate>
+                                                    <Border Width="120" Height="50" BorderBrush="#CCC" BorderThickness="1" ClipToBounds="True">
+                                                        <Border.Background>
+                                                            <ImageBrush ImageSource="{Binding Preview}"
+                                                                        Viewbox="{Binding CropRect}"
+                                                                        ViewboxUnits="RelativeToBoundingBox"
+                                                                        Stretch="UniformToFill"/>
+                                                        </Border.Background>
                                                     </Border>
                                                 </DataTemplate>
                                             </DataGridTemplateColumn.CellTemplate>

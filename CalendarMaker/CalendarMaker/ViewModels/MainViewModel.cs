@@ -140,6 +140,7 @@ namespace CalendarMaker.ViewModels
                     HeaderEraText = CalendarMaker.Services.CalendarBuilder.FormatEraText(month),
                     Cells = new ObservableCollection<DayCell>(cells),
                     ImagePath = (i < Settings.MonthImagePaths.Count) ? Settings.MonthImagePaths[i] : string.Empty,
+                    ImageCropRect = (i < Settings.MonthImageCropRects.Count) ? Settings.MonthImageCropRects[i] : new System.Windows.Rect(0, 0, 1, 1),
                     WeekdayLabels = CalendarMaker.Services.CalendarBuilder.BuildWeekdayLabels(Settings.StartWeekday),
                     StartWeekday = Settings.StartWeekday
                 };
@@ -228,6 +229,69 @@ namespace CalendarMaker.ViewModels
                     ImageRows[index].ImagePath = path;
                     index++;
                 }
+            }
+            finally
+            {
+                _suspendImageRowSync = previous;
+            }
+
+            SyncImageRowsToSettings();
+            BuildAllPages();
+        }
+
+        public void MoveMonthImage(int fromIndex, int toIndex, bool copy)
+        {
+            if (ImageRows.Count == 0) return;
+            if (fromIndex < 0 || fromIndex >= ImageRows.Count) return;
+            if (toIndex < 0 || toIndex >= ImageRows.Count) return;
+            if (fromIndex == toIndex) return;
+
+            var from = ImageRows[fromIndex];
+            if (string.IsNullOrWhiteSpace(from.ImagePath)) return;
+
+            var previous = _suspendImageRowSync;
+            _suspendImageRowSync = true;
+            try
+            {
+                var to = ImageRows[toIndex];
+                if (copy)
+                {
+                    to.ImagePath = from.ImagePath;
+                    to.CropRect = from.CropRect;
+                }
+                else
+                {
+                    // Move: swap if destination already has an image, otherwise move into empty slot.
+                    string toPath = to.ImagePath;
+                    var toCrop = to.CropRect;
+
+                    to.ImagePath = from.ImagePath;
+                    to.CropRect = from.CropRect;
+
+                    from.ImagePath = toPath;
+                    from.CropRect = toCrop;
+                }
+            }
+            finally
+            {
+                _suspendImageRowSync = previous;
+            }
+
+            SyncImageRowsToSettings();
+            BuildAllPages();
+        }
+
+        public void ClearMonthImage(int index)
+        {
+            if (ImageRows.Count == 0) return;
+            if (index < 0 || index >= ImageRows.Count) return;
+
+            var previous = _suspendImageRowSync;
+            _suspendImageRowSync = true;
+            try
+            {
+                ImageRows[index].ImagePath = string.Empty;
+                ImageRows[index].CropRect = new System.Windows.Rect(0, 0, 1, 1);
             }
             finally
             {
@@ -373,7 +437,16 @@ namespace CalendarMaker.ViewModels
             {
                 var date = Settings.StartMonth.AddMonths(i);
                 var path = (i < Settings.MonthImagePaths.Count) ? Settings.MonthImagePaths[i] : string.Empty;
-                ImageRows.Add(new MonthImageRow { MonthDate = date, ImagePath = path });
+                var row = new MonthImageRow { MonthDate = date, ImagePath = path };
+
+                if (i < Settings.MonthImageCropRects.Count)
+                {
+                    var stored = Settings.MonthImageCropRects[i];
+                    var full = new System.Windows.Rect(0, 0, 1, 1);
+                    if (stored != full) row.CropRect = stored;
+                }
+
+                ImageRows.Add(row);
             }
         }
 
@@ -405,6 +478,9 @@ namespace CalendarMaker.ViewModels
             {
                 string path = i < ImageRows.Count ? ImageRows[i].ImagePath : string.Empty;
                 Settings.SetMonthImagePath(i, path);
+
+                var crop = i < ImageRows.Count ? ImageRows[i].CropRect : new System.Windows.Rect(0, 0, 1, 1);
+                Settings.SetMonthImageCropRect(i, crop);
             }
         }
 
@@ -418,6 +494,7 @@ namespace CalendarMaker.ViewModels
                 for (int i = 0; i < ImageRows.Count && i < Settings.MonthImagePaths.Count; i++)
                 {
                     ImageRows[i].ImagePath = Settings.MonthImagePaths[i];
+                    if (i < Settings.MonthImageCropRects.Count) ImageRows[i].CropRect = Settings.MonthImageCropRects[i];
                 }
             }
             finally
@@ -456,7 +533,9 @@ namespace CalendarMaker.ViewModels
             if (_suspendImageRowSync) return;
             if (sender is not MonthImageRow) return;
 
-            if (string.IsNullOrEmpty(e.PropertyName) || e.PropertyName == nameof(MonthImageRow.ImagePath))
+            if (string.IsNullOrEmpty(e.PropertyName)
+                || e.PropertyName == nameof(MonthImageRow.ImagePath)
+                || e.PropertyName == nameof(MonthImageRow.CropRect))
             {
                 SyncImageRowsToSettings();
                 BuildAllPages();

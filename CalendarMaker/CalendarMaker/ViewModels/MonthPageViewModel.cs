@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using CalendarMaker.Models;
 
 namespace CalendarMaker.ViewModels
@@ -14,6 +15,7 @@ namespace CalendarMaker.ViewModels
         public string MonthEnglish { get; set; } = string.Empty;
         public string HeaderEraText { get; set; } = string.Empty;
         public string? ImagePath { get; set; }
+        public Rect ImageCropRect { get; set; } = new(0, 0, 1, 1);
         public ObservableCollection<DayCell> Cells { get; set; } = new();
         public string[] WeekdayLabels { get; set; } = new string[7];
         public StartWeekday StartWeekday { get; set; }

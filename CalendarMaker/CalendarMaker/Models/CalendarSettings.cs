@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Windows;
 
 namespace CalendarMaker.Models
 {
@@ -26,6 +27,8 @@ namespace CalendarMaker.Models
     /// </summary>
     public class CalendarSettings
     {
+        private static readonly Rect FullRect = new(0, 0, 1, 1);
+
         // カレンダーの起点となる年月。年度開始を固定したい場合はここを上書き。
         public DateOnly StartMonth { get; set; } = new(DateTime.Now.Year, DateTime.Now.Month, 1);
 
@@ -41,6 +44,9 @@ namespace CalendarMaker.Models
         // 月ごとの画像パスを保持。0〜11のインデックスで該当月を参照。
         public ObservableCollection<string> MonthImagePaths { get; } = new(Enumerable.Repeat(string.Empty, 12));
 
+        // 月ごとの画像切り抜き（0〜1の相対座標）。PageView/プレビューで 3:2 にクリップする。
+        public ObservableCollection<Rect> MonthImageCropRects { get; } = new(Enumerable.Repeat(FullRect, 12));
+
         public DateTimeOffset? HolidaysLastFetched { get; set; }
         public DateTimeOffset? HolidaysSourceLastModified { get; set; }
         public DateOnly? HolidaysRangeStart { get; set; }
@@ -54,6 +60,12 @@ namespace CalendarMaker.Models
         {
             if (index < 0 || index >= MonthImagePaths.Count) return;
             MonthImagePaths[index] = path ?? string.Empty;
+        }
+
+        public void SetMonthImageCropRect(int index, Rect rect)
+        {
+            if (index < 0 || index >= MonthImageCropRects.Count) return;
+            MonthImageCropRects[index] = rect;
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Win32;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +20,9 @@ namespace CalendarMaker
     {
         // マウスホイールで拡大縮小するときのステップ幅。好きな感度に変更可。
         private const double ZoomStep = 0.1;
+        private const string MonthImageRowDragFormat = "CalendarMaker.MonthImageRowIndex";
+        private Point _monthImagesDragStart;
+        private bool _monthImagesMaybeDragging;
         private bool _isPanning;
         private Point _panStart;
         private Point _panOrigin;
@@ -81,34 +85,90 @@ namespace CalendarMaker
 
         private void MonthImagesGrid_PreviewDragOver(object sender, DragEventArgs e)
         {
-            e.Effects = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effects = DragDropEffects.Copy;
+            }
+            else if (e.Data.GetDataPresent(MonthImageRowDragFormat))
+            {
+                bool copy = e.KeyStates.HasFlag(DragDropKeyStates.ControlKey);
+                e.Effects = copy ? DragDropEffects.Copy : DragDropEffects.Move;
+            }
+            else
+            {
+                e.Effects = DragDropEffects.None;
+            }
+
             e.Handled = true;
+        }
+
+        private void MonthImagesGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _monthImagesDragStart = e.GetPosition(null);
+            _monthImagesMaybeDragging = true;
+        }
+
+        private void MonthImagesGrid_PreviewMouseMove(object sender, MouseEventArgs e)
+        {
+            if (!_monthImagesMaybeDragging) return;
+            if (e.LeftButton != MouseButtonState.Pressed) { _monthImagesMaybeDragging = false; return; }
+
+            var pos = e.GetPosition(null);
+            if (Math.Abs(pos.X - _monthImagesDragStart.X) < SystemParameters.MinimumHorizontalDragDistance
+                && Math.Abs(pos.Y - _monthImagesDragStart.Y) < SystemParameters.MinimumVerticalDragDistance)
+            {
+                return;
+            }
+
+            _monthImagesMaybeDragging = false;
+
+            if (sender is not DataGrid grid) return;
+            if (grid.SelectedItem is not MonthImageRow row) return;
+            if (string.IsNullOrWhiteSpace(row.ImagePath)) return;
+
+            int fromIndex = VM.ImageRows.IndexOf(row);
+            if (fromIndex < 0) return;
+
+            var data = new DataObject();
+            data.SetData(MonthImageRowDragFormat, fromIndex);
+            DragDrop.DoDragDrop(grid, data, DragDropEffects.Move | DragDropEffects.Copy);
         }
 
         private void MonthImagesGrid_Drop(object sender, DragEventArgs e)
         {
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop)) return;
-            if (e.Data.GetData(DataFormats.FileDrop) is not string[] paths) return;
+            if (sender is not DataGrid grid) return;
 
-            int startIndex = 0;
+            int targetIndex = 0;
+            var pos = e.GetPosition(grid);
+            var hit = grid.InputHitTest(pos) as DependencyObject;
+            var dropRow = FindVisualParent<DataGridRow>(hit);
 
-            if (sender is DataGrid grid)
+            if (dropRow?.Item is MonthImageRow dropItem)
             {
-                var pos = e.GetPosition(grid);
-                var hit = grid.InputHitTest(pos) as DependencyObject;
-                var row = FindVisualParent<DataGridRow>(hit);
-
-                if (row?.Item is MonthImageRow rowItem)
-                {
-                    startIndex = VM.ImageRows.IndexOf(rowItem);
-                }
-                else if (grid.SelectedItem is MonthImageRow selected)
-                {
-                    startIndex = VM.ImageRows.IndexOf(selected);
-                }
+                targetIndex = VM.ImageRows.IndexOf(dropItem);
+            }
+            else if (grid.SelectedItem is MonthImageRow selected)
+            {
+                targetIndex = VM.ImageRows.IndexOf(selected);
             }
 
-            VM.SetMonthImagesFromIndex(startIndex, paths);
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                if (e.Data.GetData(DataFormats.FileDrop) is not string[] paths) return;
+                VM.SetMonthImagesFromIndex(targetIndex, paths);
+                e.Handled = true;
+                return;
+            }
+
+            if (e.Data.GetDataPresent(MonthImageRowDragFormat))
+            {
+                if (e.Data.GetData(MonthImageRowDragFormat) is not int fromIndex) return;
+                bool copy = e.KeyStates.HasFlag(DragDropKeyStates.ControlKey);
+                VM.MoveMonthImage(fromIndex, targetIndex, copy);
+                e.Handled = true;
+                return;
+            }
+
             e.Handled = true;
         }
 
@@ -121,6 +181,42 @@ namespace CalendarMaker
             }
 
             return null;
+        }
+
+        private void MonthImagesGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not DataGrid grid) return;
+            if (grid.SelectedItem is not MonthImageRow row) return;
+            if (string.IsNullOrWhiteSpace(row.ImagePath) || !File.Exists(row.ImagePath)) return;
+
+            var win = new ImageCropWindow(row) { Owner = this };
+            win.ShowDialog();
+        }
+
+        private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Delete) return;
+            if (!MonthImagesGrid.IsKeyboardFocusWithin) return;
+            if (MonthImagesGrid.SelectedItem is not MonthImageRow row) return;
+
+            int index = VM.ImageRows.IndexOf(row);
+            if (index < 0) return;
+
+            VM.ClearMonthImage(index);
+            e.Handled = true;
+        }
+
+        private void MonthImagesGrid_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key != Key.Delete) return;
+            if (sender is not DataGrid grid) return;
+            if (grid.SelectedItem is not MonthImageRow row) return;
+
+            int index = VM.ImageRows.IndexOf(row);
+            if (index < 0) return;
+
+            VM.ClearMonthImage(index);
+            e.Handled = true;
         }
 
         private void Rebuild_Click(object sender, RoutedEventArgs e) => VM.BuildAllPages();
